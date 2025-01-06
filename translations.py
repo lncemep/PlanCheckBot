@@ -41,6 +41,16 @@ translations = {
         "en": "Choose an action 🛠:",
         "ua": "Оберіть дію 🛠:"
     },
+    "delete_task_button": {
+        "ru": "Удалить задачу",
+        "ua": "Видалити завдання",
+        "en": "Delete task"
+    },
+    "cancel_button": {
+        "ru": "Отмена",
+        "ua": "Скасувати",
+        "en": "Cancel"
+    },
     "menu": {
         "ru": ("➕ Добавить задачу", "📋 Мои задачи", "📊 Статистика", "⚙️ Настройки"),
         "en": ("➕ Add task", "📋 Show tasks", "📊 Statistics", "⚙️ Settings"),

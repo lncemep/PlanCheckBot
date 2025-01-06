@@ -1209,10 +1209,14 @@ async def handle_task_decision(call: CallbackQuery):
     """
     Обрабатывает нажатие инлайн-кнопок «Выполнено» / «Не выполнено».
     Записывает результат в statistics, удаляет задачу из tasks,
-    убирает auto_fail.
+    убирает auto_fail и удаляет сообщение с кнопками.
     """
     user_id = call.from_user.id
     data = call.data
+
+    user = get_user(user_id)
+
+    lang = user.get("language", "en")
 
     if data.startswith("complete_"):
         task_id_str = data.split("_")[1]
@@ -1228,8 +1232,14 @@ async def handle_task_decision(call: CallbackQuery):
             pass
         remove_job_record(auto_fail_job_id)
 
-        await call.message.answer("Задача помечена как ВЫПОЛНЕНА.")
-        await call.answer()
+        # Отправляем уведомление в чат и всплывающее сообщение
+        message_text = translations['task_completed_message'].get(lang, "Task completed ✅")
+        await call.message.answer(message_text)  # Сообщение в чат
+        await call.answer("✅ " + message_text[:50])  # Всплывающее сообщение (до 50 символов)
+        try:
+            await call.message.delete()  # Удаляем сообщение с кнопками
+        except Exception:
+            pass  # Просто игнорируем ошибку
 
     elif data.startswith("fail_"):
         task_id_str = data.split("_")[1]
@@ -1245,5 +1255,11 @@ async def handle_task_decision(call: CallbackQuery):
             pass
         remove_job_record(auto_fail_job_id)
 
-        await call.message.answer("Задача помечена как НЕ выполнена.")
-        await call.answer()
+        # Отправляем уведомление в чат и всплывающее сообщение
+        message_text = translations['task_failed_message'].get(lang, "Task failed ❌")
+        await call.message.answer(message_text)  # Сообщение в чат
+        await call.answer("❌ " + message_text[:50])  # Всплывающее сообщение (до 50 символов)
+        try:
+            await call.message.delete()  # Удаляем сообщение с кнопками
+        except Exception:
+            pass  # Просто игнорируем ошибку
