@@ -133,7 +133,7 @@ Feel free to open issues or pull requests if you find bugs or want to add more f
 
 ## 📄 License
 
-This project is distributed under the [MIT License](LICENSE). Use it freely, customize it, and distribute it.  
+This project is the property of lncemep. All rights reserved. Any unauthorized use, copying, modification or distribution of this project is strictly prohibited.  
 
 ---
 
