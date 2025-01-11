@@ -1,8 +1,7 @@
 # handlers.py
-
+# user_id admin 943905400
 import re
 import asyncio
-# import pytz  # можно оставить, если вам нужен pytz где-то ещё, но для localize теперь не используется
 from datetime import datetime, time, timedelta, timezone
 
 from aiogram import Bot, Dispatcher, exceptions, types
@@ -35,12 +34,15 @@ from database import (
     increment_statistics,
     get_user_statistics,
     get_tasks_due_today,
-    get_weekly_statistics
+    get_weekly_statistics,
+    reset_user_statistics,
+    get_all_users
 )
 
 from jobs import add_job_record, remove_job_record
 from scheduler import scheduler, reminder_job, due_job, init_scheduler
 
+admin_id = 943905400
 ###############################
 #   Временное хранилище
 ###############################
@@ -54,6 +56,84 @@ def register_handlers():
 ###########################
 
 user_language = {}
+
+@router.message(Command(commands=["broadcast"]))
+async def broadcast_command(message: Message):
+    """
+    Хендлер команды /broadcast. Шлёт массовую рассылку всем пользователям,
+    учитывая их язык. Ссылка уже прописана в translations.
+    """
+    # 1) Проверяем, что этот пользователь — «админ»
+    if message.from_user.id != admin_id:
+        await message.answer("You are not allowed to use this command.")
+        return
+
+    # 2) Получаем список всех пользователей
+    all_users = get_all_users()
+    if not all_users:
+        await message.answer("В базе нет пользователей для рассылки.")
+        return
+
+    success_count = 0
+    fail_count = 0
+
+    # 3) Пробегаемся по всем пользователям и шлём каждому сообщение
+    for user_info in all_users:
+        user_id = user_info["user_id"]
+        user_lang = user_info.get("language", "en")  # если у кого-то не задан язык, берём "en"
+
+        # 3.1) Получаем текст для конкретного языка
+        broadcast_text = translations["mass_broadcast"].get(user_lang, translations["mass_broadcast"]["en"])
+
+        # 3.2) Отправляем сообщение
+        try:
+            await message.bot.send_message(
+                chat_id=user_id,
+                text=broadcast_text,
+                parse_mode="HTML",  
+                disable_web_page_preview=False
+            )
+            success_count += 1
+
+        except exceptions.TelegramForbiddenError:
+            # Пользователь мог заблокировать бота
+            fail_count += 1
+        except exceptions.TelegramBadRequest:
+            # Неверный user_id или ещё какая-то ошибка
+            fail_count += 1
+        except exceptions.RetryAfter as e:
+            # Если Телеграм просит подождать (Rate limit)
+            print(f"Need to sleep {e.timeout} seconds.")
+            await asyncio.sleep(e.timeout)
+            fail_count += 1
+        except Exception as e:
+            # Любая прочая ошибка
+            print(f"[ERROR] Broadcast to user {user_id} failed: {e}")
+            fail_count += 1
+
+    # 4) После цикла сообщаем админу результаты рассылки
+    result_msg = (
+        f"Массовая рассылка завершена!\n"
+        f"Успешно: {success_count}\n"
+        f"Ошибок: {fail_count}"
+    )
+    await message.answer(result_msg)
+
+@router.message(Command(commands=["users_count"]))
+async def users_count_command(message: Message):
+    """
+    Показывает, сколько всего пользователей хранится в БД.
+    Только для админа.
+    """
+    if message.from_user.id != admin_id:
+        await message.answer("You are not allowed to use this command.")
+        return
+
+    all_users = get_all_users()  # [{'user_id': ..., 'language': ...}, ...]
+    count_users = len(all_users)
+
+    await message.answer(f"Всего пользователей в боте: {count_users}")
+
 
 def create_main_menu(lang):
     print(f"[LOG] create_main_menu вызвана для языка: {lang}")
@@ -237,6 +317,46 @@ async def handle_statistics(message: types.Message):
         return
     
     await message.answer(stats_message)
+
+    # Создаём клавиатуру с кнопками "Очистить статистику" и "Отмена"
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=translations["clear_stats_button"][lang])],
+            [KeyboardButton(text=translations["cancel_button"][lang])]
+        ],
+        resize_keyboard=True
+    )
+
+    # Предлагаем выбрать действие
+    await message.answer(
+        translations["choose_action"][lang],
+        reply_markup=keyboard
+    )
+
+@router.message(lambda message: (
+    get_user(message.from_user.id) 
+    and message.text in [
+        translations["clear_stats_button"].get(get_user(message.from_user.id)["language"], "Clear Stats")
+    ]
+))
+async def handle_clear_stats(message: types.Message):
+    user_id = message.from_user.id
+    user = get_user(user_id)
+    if not user:
+        await message.reply("Error: User not found. Please restart the bot with /start.")
+        return
+
+    lang = user.get("language", "en")
+
+    # Вызываем функцию, которая сбрасывает статистику
+    reset_user_statistics(user_id)
+
+    # Говорим пользователю, что статистика очищена:
+    await message.answer(
+        translations["stats_cleared"][lang],
+        reply_markup=create_main_menu(lang)
+    )
+
 
 @router.message(lambda message: message.text == translations["menu"].get(get_user(message.from_user.id)["language"], [])[3])
 async def settings_menu(message: Message):
@@ -1133,6 +1253,12 @@ async def handle_my_tasks(message: Message):
             print(f"[INFO] No active tasks for user_id={user_id}")
             return
 
+        # -------------------------------------------------------------------------------------------
+        # Часть, которая «потерялась»: сохраним задачи в словарь, чтобы затем можно было удалять по индексу
+        user_tasks.setdefault(user_id, {})
+        user_tasks[user_id]["current_tasks"] = tasks
+
+        # Формируем текст со списком задач
         task_list = [translations["active_tasks_count"].get(lang, "Active tasks") + f": {len(tasks)}"]
         for idx, task_data in enumerate(tasks, start=1):
             try:
@@ -1147,13 +1273,131 @@ async def handle_my_tasks(message: Message):
             except Exception as e:
                 print(f"[WARNING] Error processing task for user_id={user_id}: {e}")
 
-        await message.reply("\n\n".join(task_list))
+        # Создаём кнопки «Удалить задачу» и «Отмена»
+        keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text=translations["delete_task_button"][lang])],
+                [KeyboardButton(text=translations["cancel_button"][lang])]
+            ],
+            resize_keyboard=True
+        )
+        # -------------------------------------------------------------------------------------------
+
+        # Отправляем список задач и клавиатуру пользователю
+        await message.reply("\n\n".join(task_list), reply_markup=keyboard)
         print(f"[INFO] Sent {len(tasks)} tasks to user_id={user_id}")
 
     except Exception as e:
         print(f"[ERROR] Error in handle_my_tasks for user_id={message.from_user.id}: {e}")
         await message.reply("An unexpected error occurred. Please try again later.")
 
+@router.message(lambda message: get_user(message.from_user.id) 
+                and user_tasks.get(message.from_user.id, {}).get("current_tasks") 
+                and message.text in [
+                    # Локализованная кнопка "Удалить задачу" 
+                    # и кнопка "Отмена" — учитывайте ваши переводы
+                    translations["delete_task_button"]["ru"],
+                    translations["delete_task_button"]["en"],
+                    translations["delete_task_button"]["ua"],
+                    translations["cancel_button"]["ru"],
+                    translations["cancel_button"]["en"],
+                    translations["cancel_button"]["ua"]
+                ])
+async def handle_delete_menu_selection(message: Message):
+    """
+    Обрабатывает нажатие кнопок "Удалить задачу" или "Отмена" после "Мои задачи".
+    """
+    user_id = message.from_user.id
+    user = get_user(user_id)
+    if not user:
+        await message.reply("Error: User not found. Please restart the bot with /start.")
+        return
+
+    lang = user["language"]
+
+    if message.text == translations["cancel_button"][lang]:
+        # Возврат в главное меню
+        user_tasks[user_id].pop("current_tasks", None)  # Очищаем список задач
+        await message.reply(
+            translations["action_cancelled"].get(lang, "Action cancelled."),
+            reply_markup=create_main_menu(lang)
+        )
+        return
+
+    # Если нажали "Удалить задачу"
+    if message.text == translations["delete_task_button"][lang]:
+        user_tasks[user_id]["waiting_for_delete_number"] = True
+        await message.reply(
+            translations["delete_which_task_prompt"].get(lang, "Which task number do you want to delete?"),
+            reply_markup=ReplyKeyboardRemove()
+        )
+
+
+@router.message(lambda message: user_tasks.get(message.from_user.id, {}).get("waiting_for_delete_number"))
+async def handle_delete_task_by_number(message: Message):
+    """
+    Когда пользователь вводит номер задачи для удаления.
+    """
+    user_id = message.from_user.id
+    user = get_user(user_id)
+    if not user:
+        await message.reply("Error: User not found. Please restart the bot with /start.")
+        return
+
+    lang = user["language"]
+
+    # Получаем список текущих задач
+    current_tasks = user_tasks[user_id].get("current_tasks", [])
+    if not current_tasks:
+        await message.reply(
+            translations["no_active_tasks"].get(lang, "You have no active tasks."),
+            reply_markup=create_main_menu(lang)
+        )
+        user_tasks[user_id].pop("waiting_for_delete_number", None)
+        return
+
+    try:
+        task_index = int(message.text.strip())
+        if task_index < 1 or task_index > len(current_tasks):
+            raise ValueError("Invalid task index")
+    except ValueError:
+        await message.reply(
+            translations["invalid_task_number"].get(lang, "Invalid task number. Try again.")
+        )
+        return
+
+    # Находим task_id по индексу (idx-1)
+    selected_task = current_tasks[task_index - 1]
+    task_id = selected_task[0]  # task_id находится в первом элементе кортежа
+
+    # Удаляем задачу из БД
+    delete_task(task_id)
+
+    # Удаляем связанные job’ы (напоминание, due, auto_fail, если есть)
+    #  1) Сначала получаем все job_id по этому task_id
+    from jobs import db_cursor, db_connection, remove_job_record
+    from scheduler import scheduler
+
+    db_cursor.execute("SELECT job_id FROM jobs WHERE task_id = ?", (task_id,))
+    jobs_to_remove = db_cursor.fetchall()
+    for row in jobs_to_remove:
+        job_id = row[0]
+        # Пытаемся удалить из scheduler
+        try:
+            scheduler.remove_job(job_id)
+        except Exception as ex:
+            print(f"[WARNING] Could not remove job {job_id} from scheduler: {ex}")
+        # Удаляем из jobs таблицы
+        remove_job_record(job_id)
+
+    # Очищаем временное хранилище
+    user_tasks[user_id].pop("waiting_for_delete_number", None)
+    user_tasks[user_id].pop("current_tasks", None)
+
+    await message.reply(
+        translations["task_deleted"].get(lang, "Task was successfully deleted."),
+        reply_markup=create_main_menu(lang)
+    )
 
 def create_main_menu(lang: str) -> ReplyKeyboardMarkup:
     print(f"[LOG] (вторая копия) create_main_menu, lang={lang}")

@@ -254,6 +254,30 @@ def get_weekly_statistics(user_id: int, start_date: str, end_date: str) -> dict:
 
     return {"completed": completed, "failed": failed}
 
+def reset_user_statistics(user_id: int):
+    """
+    Сбрасывает (обнуляет) статистику пользователя в таблице statistics.
+    """
+    db_cursor.execute(
+        """
+        UPDATE statistics
+        SET completed_tasks = 0, 
+            failed_tasks = 0
+        WHERE user_id = ?
+        """,
+        (user_id,)
+    )
+    db_connection.commit()
+
+
+def get_all_users():
+    """
+    Возвращает список словарей вида [{'user_id': ..., 'language': ...}, ...]
+    """
+    db_cursor.execute("SELECT user_id, language FROM users")
+    rows = db_cursor.fetchall()
+    return [{"user_id": row[0], "language": row[1]} for row in rows]
+
 ###############################
 #   Инициализация при импорте
 ###############################

@@ -1,6 +1,65 @@
 # translations.py
 
 translations = {
+    "mass_broadcast": {
+        "ru": (
+            "Привет, спасибо что пользуешься ботом! 😊\n"
+            "Надеюсь, он помогает тебе.\n\n"
+            "🎉 Я рад сообщить, что у нас уже 50 пользователей! Это отличный старт, и мы стремимся к дальнейшему росту вместе с вами.\n\n"
+            "✨ Вышло обновление: теперь можно удалять задачи и сбрасывать статистику.\n\n"
+            "🙌 Если хочешь принести вклад в этот проект, пожалуйста, поделись своими мыслями о нас!\n\n"
+            "🎙 Оставить отзыв\n"
+            "👉 https://forms.gle/aCkjn8z4hfRPPNqF7\n"
+            ),
+        "en": (
+            "Hello, thank you for using our bot! 😊\n"
+            "I hope it helps you.\n\n"
+            "🎉 I’m excited to announce that we’ve reached 50 users! This is a great milestone, and we’re looking forward to growing even more with your support.\n\n"
+            "✨ A new update is out: you can now delete tasks and reset statistics.\n\n"
+            "🙌 If you’d like to contribute to this project, please share your thoughts with us!\n\n"
+            "🎙 Leave Feedback\n"
+            "👉 https://forms.gle/5QutHgq4dCKtpFqdA\n"
+            ),
+        "ua": (
+            "Привіт, дякуємо, що користуєшся ботом! 😊\n"
+            "Сподіваюсь, він допомагає тобі.\n\n"
+            "🎉 Я радий повідомити, що у нас вже 50 користувачів! Це чудовий старт, і ми прагнемо розвиватися разом з вами.\n\n"
+            "✨ Вийшло оновлення: тепер ви можете видаляти завдання та скидати статистику.\n\n"
+            "🙌 Якщо хочеш внести свій вклад у цей проект, будь ласка, поділись своїми думками про нас!\n\n"
+            "🎙 Залишити відгук\n"
+            "👉 https://forms.gle/5LYgmCSRyFemskUTA\n"
+        ),
+    },
+    "clear_stats_button": {
+        "ru": "🗑 Очистить статистику",
+        "en": "🗑 Clear Stats",
+        "ua": "🗑 Скинути статистику"
+    },
+    "stats_cleared": {
+        "ru": "Ваша статистика была успешно очищена! ♻️",
+        "en": "Your stats have been successfully cleared! ♻️",
+        "ua": "Ваша статистика була успішно очищена! ♻️"
+    },
+    "choose_action": {
+        "ru": "Выберите действие:",
+        "en": "Choose an action:",
+        "ua": "Оберіть дію:"
+    },    
+    "delete_which_task_prompt": {
+        "ru": "Какой номер задания вы хотите удалить? #️⃣",
+        "en": "Which task number do you want to delete? #️⃣",
+        "ua": "Який номер завдання ви хочете видалити? #️⃣"
+    },
+    "delete_task_button": {
+        "ru": "🗑 Удалить задачу",
+        "en": "🗑 Delete Task",
+        "ua": "🗑 Видалити задачу"
+    },
+    "task_deleted": {
+        "ru": "Задача успешно удалена. ♻️",
+        "en": "Task was successfully deleted. ♻️",
+        "ua": "Завдання успішно видалено. ♻️"
+    },
     "language_selected": {
         "ru": "Вы выбрали Русский язык! 🎉",
         "en": "You have chosen English! 🎉",
@@ -142,9 +201,9 @@ translations = {
         "ua": "Минуле вже пішло, не обрати! 🔙"
     },
     "task_saved_prompt": {
-        "ru": "Текст задачи сохранён. Можешь формить задачу",
-        "en": "Task text stored. Proceed to add task",
-        "ua": "Текст завдання збережено. Додай саме завдання"
+        "ru": "Текст задачи сохранён. Можешь формить задачу ➡️",
+        "en": "Task text stored. Proceed to add task ➡️",
+        "ua": "Текст завдання збережено. Додай саме завдання ➡️"
     },
     "select_reminder_time_prompt": {
         "ru": "Когда напомнить? 🔔",
