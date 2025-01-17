@@ -20,3 +20,6 @@ pytz==2024.2
 typing_extensions==4.12.2
 tzlocal==5.2
 yarl==1.18.3
+pydantic
+fastapi
+uvicorn

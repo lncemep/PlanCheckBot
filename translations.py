@@ -1,33 +1,32 @@
 # translations.py
 
 translations = {
+    "press_button": {
+        "ru": "Активировать приложение🔮",
+        "en": "Activate app 🔮",
+        "ua": "Активувати додаток🔮"
+    },
     "mass_broadcast": {
         "ru": (
-            "Привет, спасибо что пользуешься ботом! 😊\n"
-            "Надеюсь, он помогает тебе.\n\n"
-            "🎉 Я рад сообщить, что у нас уже 50 пользователей! Это отличный старт, и мы стремимся к дальнейшему росту вместе с вами.\n\n"
-            "✨ Вышло обновление: теперь можно удалять задачи и сбрасывать статистику.\n\n"
-            "🙌 Если хочешь принести вклад в этот проект, пожалуйста, поделись своими мыслями о нас!\n\n"
-            "🎙 Оставить отзыв\n"
-            "👉 https://forms.gle/aCkjn8z4hfRPPNqF7\n"
+            "Привет, я надеюсь что у тебя всё в полном порядке! 😊\n"
+            "Спасибо что остаешься с нами.\n\n"
+            "🎉 Наша команда разработала для тебя приложение.\n\n"
+            "✨ Это только начало, мы все время будем улучшать бота.\n\n"
+            "🙌 Скорее открывай его!\n\n"
             ),
         "en": (
-            "Hello, thank you for using our bot! 😊\n"
-            "I hope it helps you.\n\n"
-            "🎉 I’m excited to announce that we’ve reached 50 users! This is a great milestone, and we’re looking forward to growing even more with your support.\n\n"
-            "✨ A new update is out: you can now delete tasks and reset statistics.\n\n"
-            "🙌 If you’d like to contribute to this project, please share your thoughts with us!\n\n"
-            "🎙 Leave Feedback\n"
-            "👉 https://forms.gle/5QutHgq4dCKtpFqdA\n"
+            "Hi, I hope you're doing well! 😊\n"
+            "Thank you for staying with us.\n\n"
+            "🎉 Our team has developed an app for you.\n\n"
+            "✨ This is just the beginning, we'll keep improving the bot.\n\n"
+            "🙌 Hurry up and open it!\n\n"
             ),
         "ua": (
-            "Привіт, дякуємо, що користуєшся ботом! 😊\n"
-            "Сподіваюсь, він допомагає тобі.\n\n"
-            "🎉 Я радий повідомити, що у нас вже 50 користувачів! Це чудовий старт, і ми прагнемо розвиватися разом з вами.\n\n"
-            "✨ Вийшло оновлення: тепер ви можете видаляти завдання та скидати статистику.\n\n"
-            "🙌 Якщо хочеш внести свій вклад у цей проект, будь ласка, поділись своїми думками про нас!\n\n"
-            "🎙 Залишити відгук\n"
-            "👉 https://forms.gle/5LYgmCSRyFemskUTA\n"
+            "Привіт, я сподіваюся, що в тебе все гаразд! 😊\n"
+            "Дякую, що залишаєшся з нами.\n\n"
+            "🎉 Наша команда розробила для тебе додаток.\n\n"
+            "✨ Це тільки початок, ми весь час будемо покращувати бота.\n\n"
+            "🙌 Швидше відкривай його!\n\n"
         ),
     },
     "clear_stats_button": {
@@ -345,4 +344,54 @@ translations = {
         "en": "Failed",
         "ua": "Невиконано"
     },
+    "title_page": {
+        "ru": "Мои задачи",
+        "en": "My Tasks",
+        "ua": "Мої завдання"
+    },
+    "loading_tasks": {
+        "ru": "Загрузка задач...",
+        "en": "Loading tasks...",
+        "ua": "Завантаження завдань..."
+    },
+    "no_tasks": {
+        "ru": "У вас пока нет задач!",
+        "en": "No tasks yet!",
+        "ua": "У вас поки немає завдань!"
+    },
+    "deadline_passed": {
+        "ru": "Дедлайн прошёл!",
+        "en": "Deadline passed!",
+        "ua": "Дедлайн минув!"
+    },
+    "remaining": {
+        "ru": "Осталось",
+        "en": "Remaining",
+        "ua": "Залишилось"
+    },
+    "days_suffix": {
+        "ru": " д. ",
+        "en": " d. ",
+        "ua": " д. "
+    },
+    "button_complete": {
+        "ru": "Выполнено",
+        "en": "Complete",
+        "ua": "Виконано"
+    },
+    "button_fail": {
+        "ru": "Провалено",
+        "en": "Fail",
+        "ua": "Провалено"
+    },
+    "update_status_error": {
+        "ru": "Ошибка обновления статуса",
+        "en": "Error updating status",
+        "ua": "Помилка оновлення статусу"
+    },
+    "error_loading_tasks": {
+        "ru": "Ошибка при загрузке задач!",
+        "en": "Error loading tasks!",
+        "ua": "Помилка завантаження завдань!"
+    }
 }

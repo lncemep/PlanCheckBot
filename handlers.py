@@ -12,7 +12,10 @@ from aiogram.types import (
     ReplyKeyboardRemove,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
-    CallbackQuery
+    CallbackQuery,
+    MenuButtonWebApp,
+    WebAppInfo,
+    MenuButtonDefault
 )
 from aiogram.filters import Command
 from aiogram.fsm.state import StatesGroup, State
@@ -57,6 +60,19 @@ def register_handlers():
 
 user_language = {}
 
+# Функция для создания инлайн-кнопки с переводом
+def get_inline_button(user_lang: str):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=translations["press_button"].get(user_lang, translations["press_button"]["ru"]),
+                    callback_data="setup_menu_webapp"
+                )
+            ]
+        ]
+    )
+
 @router.message(Command(commands=["broadcast"]))
 async def broadcast_command(message: Message):
     """
@@ -80,18 +96,22 @@ async def broadcast_command(message: Message):
     # 3) Пробегаемся по всем пользователям и шлём каждому сообщение
     for user_info in all_users:
         user_id = user_info["user_id"]
-        user_lang = user_info.get("language", "en")  # если у кого-то не задан язык, берём "en"
+        user_lang = user_info.get("language", "ru")  # если у кого-то не задан язык, берём "ru" по умолчанию
 
         # 3.1) Получаем текст для конкретного языка
-        broadcast_text = translations["mass_broadcast"].get(user_lang, translations["mass_broadcast"]["en"])
+        broadcast_text = translations["mass_broadcast"].get(user_lang, translations["mass_broadcast"]["ru"])
 
-        # 3.2) Отправляем сообщение
+        # 3.2) Создаём инлайн-кнопку с учётом языка пользователя
+        kb = get_inline_button(user_lang)
+
+        # 3.3) Отправляем сообщение
         try:
             await message.bot.send_message(
                 chat_id=user_id,
                 text=broadcast_text,
                 parse_mode="HTML",  
-                disable_web_page_preview=False
+                disable_web_page_preview=False,
+                reply_markup=kb  # Добавляем инлайн-кнопку
             )
             success_count += 1
 
@@ -148,6 +168,8 @@ def create_main_menu(lang):
 @router.message(Command(commands=["start"]))
 async def start_command(message: Message):
     print(f"[LOG] start_command, text={message.text}")
+
+    # Обычная "reply"-клавиатура для выбора языка
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Український")],
@@ -168,6 +190,32 @@ async def start_command(message: Message):
     await message.reply("Choose a language:", reply_markup=keyboard)
 
 
+
+@router.callback_query(lambda c: c.data == "setup_menu_webapp")
+async def setup_menu_webapp_callback(call: CallbackQuery):
+    user_id = call.from_user.id
+    print(f"[LOG] setup_menu_webapp_callback for user_id={user_id}")
+
+    # Вместо токена подставляем user_id в URL
+    base_url = "https://5906-2a02-a311-24a2-1300-2d67-1cdd-7b5d-f4b6.ngrok-free.app/webapp/index.html"
+    webapp_url = f"{base_url}?tg_id={user_id}"
+
+    # Устанавливаем MenuButtonWebApp
+    await bot.set_chat_menu_button(
+        chat_id=user_id,
+        menu_button=MenuButtonWebApp(
+            text="Мои задачи",
+            web_app=WebAppInfo(url=webapp_url)
+        )
+    )
+
+    await call.answer()
+    await bot.send_sticker(
+    chat_id=call.message.chat.id,
+    sticker="CAACAgIAAxkBAAIUe2eKmJtYeW10c1V5N2Nn7JHA3rUIAAKtDQACrJkgSN2Kd_L9h_lwNgQ"  # Замените на полученный file_id
+    )
+
+
 @router.message(lambda message: message.text in ["Український", "Русский", "English"])
 async def set_language(message: Message):
     print(f"[LOG] set_language, выбрано: {message.text}")
@@ -184,16 +232,20 @@ async def set_language(message: Message):
         await message.reply("Error: User not found. Please restart the bot with /start.")
         return
 
+    # Обновляем язык в настройках пользователя
     update_user_settings(user_id=user_id, language=lang)
 
+    # Убираем старую клавиатуру
     await bot.send_message(
         chat_id=message.chat.id,
         text=translations.get("language_selected", {}).get(lang, "Language has been successfully set."),
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardRemove(),
     )
 
     if user_tasks.get(user_id, {}).get("waiting_for_language_change"):
         user_tasks[user_id].pop("waiting_for_language_change", None)
+
+        # Сообщение с основным меню
         await bot.send_message(
             chat_id=message.chat.id,
             text=translations.get("select_action", {}).get(lang, "Choose an action:"),
@@ -206,7 +258,6 @@ async def set_language(message: Message):
         )
         user_tasks[user_id]["waiting_for_hour"] = True
 
-
 @router.message(lambda message: get_user(message.from_user.id) and user_tasks.get(message.from_user.id, {}).get("waiting_for_hour"))
 async def set_user_hour(message: Message):
     print(f"[LOG] set_user_hour, text={message.text}")
@@ -217,6 +268,8 @@ async def set_user_hour(message: Message):
         return
 
     lang = user.get("language", "en")
+
+    kb = get_inline_button(lang)
 
     try:
         user_hour = int(message.text.strip())
@@ -239,7 +292,8 @@ async def set_user_hour(message: Message):
         user_tasks[user_id]["waiting_for_hour"] = False
 
         await message.answer(
-            translations["timezone_set"].get(lang, "Your timezone has been set. UTC offset: {utc_offset}.").format(utc_offset=utc_offset)
+            translations["timezone_set"].get(lang, "Your timezone has been set. UTC offset: {utc_offset}.").format(utc_offset=utc_offset),
+            reply_markup=kb
         )
         await message.answer(
             translations["select_action"].get(lang, "Please select an action:"),
@@ -256,8 +310,14 @@ async def set_user_hour(message: Message):
 
 
 async def send_timezone_confirmation(message: Message, lang: str, utc_offset: int):
+    """
+    Отправляет подтверждение установки часового пояса и создаёт клавиатуру для дальнейших действий.
+    """
     print(f"[LOG] send_timezone_confirmation для user_id={message.from_user.id}, utc_offset={utc_offset}")
     try:
+
+        
+        # Тексты сообщений с переводами
         timezone_set_message = translations["timezone_set"].get(
             lang,
             "Timezone set successfully. UTC offset: {utc_offset}."
@@ -267,18 +327,23 @@ async def send_timezone_confirmation(message: Message, lang: str, utc_offset: in
             "Choose an action:"
         )
 
+        # Отправляем сообщение о подтверждении установки часового пояса
         await message.answer(timezone_set_message.format(utc_offset=utc_offset))
+
+        # Отправляем сообщение с клавиатурой
         await message.answer(
             select_action_message,
-            reply_markup=create_main_menu(lang)
         )
 
     except KeyError as e:
+        # Обработка отсутствия перевода для выбранного языка
         print(f"[ERROR] Missing translation for lang={lang}: {e}")
         await message.answer("An error occurred while processing your request. Please try again later.")
     except Exception as e:
+        # Общая обработка ошибок
         print(f"[ERROR] Failed to send timezone confirmation for user_id={message.from_user.id}: {e}")
         await message.answer("An unexpected error occurred. Please try again.")
+
 
 @router.message(lambda message: message.text == translations["menu"].get(get_user(message.from_user.id)["language"], [])[2])
 async def handle_statistics(message: types.Message):
