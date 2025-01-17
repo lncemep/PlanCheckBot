@@ -197,7 +197,7 @@ async def setup_menu_webapp_callback(call: CallbackQuery):
     print(f"[LOG] setup_menu_webapp_callback for user_id={user_id}")
 
      # Читаем URL из файла ngrok_url.txt
-    with open("ngrok_url.txt", "r") as file:
+    with open("/home/lncemep/ngrok_url.txt", "r") as file:
         ngrok_url = file.read().strip()
 
     # Вместо токена подставляем user_id в URL
