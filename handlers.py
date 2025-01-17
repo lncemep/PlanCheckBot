@@ -41,7 +41,7 @@ from database import (
     reset_user_statistics,
     get_all_users
 )
-
+import os
 from jobs import add_job_record, remove_job_record
 from scheduler import scheduler, reminder_job, due_job, init_scheduler
 
@@ -196,8 +196,12 @@ async def setup_menu_webapp_callback(call: CallbackQuery):
     user_id = call.from_user.id
     print(f"[LOG] setup_menu_webapp_callback for user_id={user_id}")
 
+     # Читаем URL из файла ngrok_url.txt
+    with open("ngrok_url.txt", "r") as file:
+        ngrok_url = file.read().strip()
+
     # Вместо токена подставляем user_id в URL
-    base_url = "https://5906-2a02-a311-24a2-1300-2d67-1cdd-7b5d-f4b6.ngrok-free.app/webapp/index.html"
+    base_url = f"{ngrok_url}/webapp/index.html"
     webapp_url = f"{base_url}?tg_id={user_id}"
 
     # Устанавливаем MenuButtonWebApp
