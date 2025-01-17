@@ -8,7 +8,7 @@ from handlers import register_handlers
 from scheduler import init_scheduler, startup_scheduler
 from webapp_server import run_webapp_server
 
-NGROK_URL_PATH = "/home/lncemep/PlanCheckBot/ngrok_url.txt"
+NGROK_URL_PATH = "/home/lncemep/PlanCheckBot/PlanCheckBot/ngrok_url.txt"
 NGROK_TIMEOUT = 60  # Время ожидания ссылки (в секундах)
 
 
