@@ -1,3 +1,4 @@
+# https://t.me/PlanCheckBot
 # PlanCheckBot: Your Personal Task Manager Bot 🚀✨
 
 > **A multilingual Telegram bot to manage your tasks, reminders, and statistics, all powered by Python, SQLite, and APScheduler.**  
